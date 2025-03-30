@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'dart:typed_data';
 import 'package:http_parser/http_parser.dart';
+import '../../theme/app_theme.dart';  // Add this import
 
 class PlaceOrderScreen extends StatefulWidget {
   const PlaceOrderScreen({super.key});
@@ -152,75 +153,103 @@ Future<String?> uploadToCloudinary(Uint8List fileBytes, String fileName) async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Place Order")),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
+      appBar: AppBar(title: const Text("Place Order")),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text("Number of Copies:"),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.remove),
-                  onPressed: () => setState(() => _copies = _copies > 1 ? _copies - 1 : 1),
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Upload Document",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _pickFile,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text("Select File"),
+                    ),
+                    if (_fileName != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          "Selected: $_fileName",
+                          style: TextStyle(color: AppTheme.textColorSecondary),  // Remove const
+                        ),
+                      ),
+                  ],
                 ),
-                Text(_copies.toString(), style: TextStyle(fontSize: 18)),
-                IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: () => setState(() => _copies++),
-                ),
-              ],
-            ),
-            Divider(),
-            Text("Page Selection:"),
-            DropdownButton<String>(
-              value: _pageSelection,
-              items: ["All Pages", "Custom Pages"].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _pageSelection = value!;
-                });
-              },
-            ),
-            if (_pageSelection == "Custom Pages")
-              TextField(
-                decoration: InputDecoration(labelText: "Enter custom page numbers (e.g., 1,3,5-7)"),
-                onChanged: (value) {
-                  setState(() {
-                    _customPages = value;
-                  });
-                },
               ),
-            Divider(),
-            SwitchListTile(
-              title: Text("Color Print"),
-              value: _isColor,
-              onChanged: (value) {
-                setState(() {
-                  _isColor = value;
-                });
-              },
             ),
-            Divider(),
-            ElevatedButton.icon(
-              icon: Icon(Icons.upload_file),
-              label: Text(_fileName == null ? "Upload File" : "File Selected: $_fileName"),
-              onPressed: _pickFile,
+            const SizedBox(height: 16),
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Print Settings",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Color Print",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        Switch(
+                          value: _isColor,
+                          onChanged: (value) => setState(() => _isColor = value),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Number of Copies",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove),
+                          onPressed: _copies > 1
+                              ? () => setState(() => _copies--)
+                              : null,
+                        ),
+                        Text(
+                          _copies.toString(),
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          onPressed: () => setState(() => _copies++),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            Spacer(),
-            Text("Total Price: ₹${_calculatePrice().toStringAsFixed(2)}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-                    onPressed: _placeOrder,
-                    child: Text("Place Order"),
-                  ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _placeOrder,
+              child: _isLoading
+                  ? CircularProgressIndicator(color: Colors.white)  // Remove const
+                  : const Text("PROCEED TO PAYMENT"),
+            ),
           ],
         ),
       ),

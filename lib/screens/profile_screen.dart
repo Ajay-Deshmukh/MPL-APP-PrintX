@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';  // Add this import
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -47,40 +48,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = Provider.of<AuthProvider>(context).user;
 
     return Scaffold(
-      appBar: AppBar(title: Text('My Profile')),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.save : Icons.edit),
+            onPressed: () {
+              if (_isEditing) {
+                _saveProfile();  // Changed from _updateProfile to _saveProfile
+              } else {
+                setState(() => _isEditing = true);
+              }
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.blueAccent,
-              child: Text(
-                user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : "U",
-                style: TextStyle(fontSize: 40, color: Colors.white),
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: AppTheme.primaryColor,  // Now AppTheme is accessible
+                  child: Text(
+                    user?.name?.substring(0, 1).toUpperCase() ?? 'U',
+                    style: const TextStyle(
+                      fontSize: 40,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                if (_isEditing)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,  // Now AppTheme is accessible
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.camera_alt, color: Colors.white),
+                      onPressed: () {
+                        // Implement photo upload
+                      },
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _nameController,
+                      enabled: _isEditing,
+                      decoration: const InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _emailController,
+                      enabled: _isEditing,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(labelText: 'Name'),
-              enabled: _isEditing,
-            ),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-              enabled: false, // Email cannot be edited
-            ),
-            SizedBox(height: 20),
-            _isEditing
-                ? ElevatedButton(
-                    onPressed: _saveProfile,
-                    child: Text("Save"),
-                  )
-                : ElevatedButton(
-                    onPressed: () => setState(() => _isEditing = true),
-                    child: Text("Edit Profile"),
-                  ),
           ],
         ),
       ),
