@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "922512712015",
+    "project_id": "printx-dfd40",
+    "storage_bucket": "printx-dfd40.firebasestorage.app"
+  },
+  "client": [
+    { 
+      "client_info": {
+        "mobilesdk_app_id": "1:922512712015:android:9e8cd49f9665b47f27a53a",
+        "android_client_info": {
+          "package_name": "com.example.printxapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC76vbD2SeubllnV0_9sB13AwyBcuI8kx8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
