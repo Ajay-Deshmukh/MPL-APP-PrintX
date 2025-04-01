@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/home_screen.dart';
+import '../../screens/admin/admin_dashboard.dart';  // Add this import
 import 'signup_screen.dart';
 import '../../theme/app_theme.dart';  // Add this import
 
@@ -26,15 +27,31 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (authProvider.user != null) {
-      String userId = authProvider.user!.id; // Extract userId
+      String userId = authProvider.user!.id;
+      String userRole = authProvider.user!.role; // Make sure your User model has a role field
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen(userId: userId)), // Pass userId
-      );
+      if (!mounted) return;
+
+      if (userRole == "Admin") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboard(userId: userId),
+          ),
+        );
+      } else {
+        // Default to user/student dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(userId: userId),
+          ),
+        );
+      }
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed! Please check your credentials.')),
+        const SnackBar(content: Text('Login failed! Please check your credentials.')),
       );
     }
   }

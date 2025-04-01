@@ -11,24 +11,50 @@ class OrderService {
       await _firestore.collection("orders").doc(order.id).set(order.toJson());
     } catch (e) {
       print("Order Error: $e");
+      throw e; // Propagate error for handling
+    } 
+  }
+
+  // Update Order After Payment
+  Future<void> updateOrderAfterPayment(String orderId, String paymentId) async {
+    try {
+      await _firestore.collection('orders').doc(orderId).update({
+        'paymentStatus': 'Paid',
+        'status': 'Confirmed',
+        'transactionId': paymentId,
+        'updatedAt': Timestamp.now(),
+      });
+      print('Order updated successfully after payment');
+    } catch (e) {
+      print("Update Order After Payment Error: $e");
+      throw e;
     }
   }
 
   // Fetch User Orders
   Future<List<OrderModel>> fetchOrders(String userId) async {
     try {
+      print('Fetching orders for userId: $userId'); // Debug print
       QuerySnapshot querySnapshot = await _firestore
           .collection("orders")
           .where("userId", isEqualTo: userId)
           .orderBy("createdAt", descending: true)
           .get();
 
-      return querySnapshot.docs
-          .map((doc) => OrderModel.fromJson(doc.data() as Map<String, dynamic>))
-          .toList();
+      print('Found ${querySnapshot.docs.length} documents'); // Debug print
+
+      final orders = querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id; // Ensure document ID is included
+        print('Order data: $data'); // Debug print
+        return OrderModel.fromJson(data);
+      }).toList();
+
+      print('Parsed ${orders.length} orders'); // Debug print
+      return orders;
     } catch (e) {
       print("Fetch Orders Error: $e");
-      return [];
+      rethrow; // Throw error for better error handling
     }
   }
 

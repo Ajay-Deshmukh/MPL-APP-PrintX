@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   Future<bool> isUserLoggedIn() async {
     return _auth.currentUser != null;
   }
@@ -83,4 +84,45 @@ Future<UserModel?> signUp(String name, String email, String password) async {
 
   // Get Current User
   User? get currentUser => _auth.currentUser;
+
+  Future<void> updateUserProfile(String userId, String name) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'name': name,
+      });
+    } catch (e) {
+      throw Exception('Failed to update profile: $e');
+    }
+  }
+
+  Future<void> changePassword({
+    required String email,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      // Re-authenticate user before password change
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+      
+      await _auth.currentUser?.reauthenticateWithCredential(credential);
+      await _auth.currentUser?.updatePassword(newPassword);
+    } catch (e) {
+      throw Exception('Failed to change password: $e');
+    }
+  }
+
+  Future<UserModel?> getUserData(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (doc.exists) {
+        return UserModel.fromJson(doc.data()!);
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Failed to fetch user data: $e');
+    }
+  }
 }

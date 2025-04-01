@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/order_provider.dart';
+import '../../services/payment_service.dart';  // Add this import
+import '../../services/order_service.dart';  // Add this import
 
 class PaymentScreen extends StatefulWidget {
   final double amount;
@@ -15,81 +17,76 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  late Razorpay _razorpay;
+  final PaymentService _paymentService = PaymentService();
+  final OrderService _orderService = OrderService();  // Add this
   bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
   }
 
   @override
   void dispose() {
-    _razorpay.clear();
+    _paymentService.dispose();
     super.dispose();
   }
 
-  void startPayment() async {
+  void startPayment() async {  // Make this async
     setState(() => _isProcessing = true);
 
-    var options = {
-      'key': 'rzp_test_dDRfvvt96dpvdw',
-      'amount': (widget.amount * 100).toInt(), // Convert to paise
-      'currency': 'INR',
-      'name': 'PrintX Xerox Center',
-      'description': 'Payment for Order #${widget.orderId}',
-      'prefill': {
-        'contact': '9876543210', // Fetch dynamically from user profile
-        'email': 'user@example.com',
-      },
-      'theme': {'color': '#3399cc'},
-    };
-
     try {
-      _razorpay.open(options);
+      // Verify if order exists in Firestore
+      final orderDoc = await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(widget.orderId)
+          .get();
+
+      if (!orderDoc.exists) {
+        throw Exception('Order not found in database');
+      }
+
+      _paymentService.startPayment(
+        widget.amount,
+        widget.orderId,
+        onSuccess: _handlePaymentSuccess,
+        onError: _handlePaymentError,
+      );
     } catch (e) {
+      print('Error starting payment: $e');
       setState(() => _isProcessing = false);
-      debugPrint('Error: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error opening payment gateway. Try again.")),
+        const SnackBar(content: Text("Error initializing payment. Please try again.")),
       );
     }
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    await FirebaseFirestore.instance.collection('orders').doc(widget.orderId).update({
-      'paymentStatus': 'Paid',
-      'transactionId': response.paymentId, // Store transaction ID
-    });
-
-    Provider.of<OrderProvider>(context, listen: false).updatePaymentStatus(widget.orderId, "Paid");
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Payment Successful! Order Confirmed.")),
-    );
-
-    Navigator.pop(context, true); // Return success status
+  void _handlePaymentSuccess(String paymentId) async {
+    try {
+      await _orderService.updateOrderAfterPayment(widget.orderId, paymentId);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Payment Successful! Order Confirmed.")),
+      );
+      Navigator.pop(context, true);
+    } catch (e) {
+      print("Error updating order after payment: $e");
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Payment successful but order update failed. Please contact support.")),
+      );
+    }
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) async {
-    await FirebaseFirestore.instance.collection('orders').doc(widget.orderId).update({
-      'paymentStatus': 'Failed',
-    });
-
+  void _handlePaymentError(String error) {
     setState(() => _isProcessing = false);
+    
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Payment Failed: ${response.message}")),
-    );
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Using External Wallet: ${response.walletName}")),
+      SnackBar(content: Text("Payment Failed: $error")),
     );
   }
 

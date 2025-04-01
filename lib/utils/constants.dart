@@ -18,8 +18,8 @@ class AppConstants {
   static const Color primaryColor = Colors.blue;
   static const Color secondaryColor = Colors.orange;
 
-  // 🔹 API Keys (Example)
-  static const String razorpayKey = "YOUR_RAZORPAY_KEY";
+  // 🔹 API Keys
+  static const String razorpayKey = 'rzp_test_51Jw5RwEwGJjPGK'; // Update with your key
 
   // 🔹 Default Messages
   static const String errorMessage = "Something went wrong. Please try again!";
