@@ -1,6 +1,5 @@
 plugins {
     id("com.android.application")
-
     // Add Google Services Plugin for Firebase
     id("com.google.gms.google-services") version "4.4.2" apply false
 }
@@ -10,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        ndkVersion = "29.0.13113456"
+        ndkVersion = "26.3.11579264"  // Updated to match the downloading version
         applicationId = "com.example.printxapp"
         minSdk = 23
         targetSdk = 33
