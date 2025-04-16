@@ -41,14 +41,42 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('orders')
-            .where('paymentStatus', isEqualTo: 'Paid')  // Only fetch paid orders
+            .where('paymentStatus', isEqualTo: 'Paid')
             .orderBy('createdAt', descending: true)
-            .snapshots(),
+            .snapshots()
+            .handleError((error) {
+              print('Firestore Error: $error');
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Error loading orders. Please check your authentication.'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+              return Stream.empty();
+            }),
         builder: (context, snapshot) {
+          // Add error handling for auth errors
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error: ${snapshot.error}'),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Trigger a rebuild to retry
+                      setState(() {});
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
           }
-
+          
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
